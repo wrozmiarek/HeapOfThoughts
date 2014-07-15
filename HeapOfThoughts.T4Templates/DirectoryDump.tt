@@ -1,0 +1,62 @@
+﻿<#@ template debug="false" hostspecific="true" language="C#" #>
+<#@ output extension=".cs" #>
+<#@ assembly name="System.Core" #>
+<#@ assembly name="Microsoft.CSharp" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.IO" #>
+<#
+    var directory = this.Host.ResolvePath("Resources");
+    var targetNamespace= (string)System.Runtime.Remoting.Messaging.CallContext.LogicalGetData("NamespaceHint");
+    VisitResources(directory, targetNamespace);
+#>
+<#+
+    void VisitResources(string rootDirectory, string targetNamespace) {         
+#>namespace <#= targetNamespace #> 
+{
+<#+
+        PushIndent("\t");
+        VisitDirectory(rootDirectory); 
+        PopIndent();
+#>
+}
+<#+
+    }
+
+    void VisitDirectory(string directory) {
+        var directoryInfo = new DirectoryInfo(directory);
+#>public static class <#= CleanName(directoryInfo.Name) #> 
+{ 
+<#+
+        foreach(var file in Directory.EnumerateFiles(directory)) { 
+            PushIndent("\t");
+            VisitFile(file);
+            PopIndent();
+        }
+        foreach(var subDirectory in Directory.EnumerateDirectories(directory)) { 
+            PushIndent("\t");
+            VisitDirectory(subDirectory);
+            PopIndent();
+        }
+#>} 
+<#+
+    }
+
+    void VisitFile(string file) {
+#>public static readonly string <#= CleanName(Path.GetFileName(file)) #> = @"<#= file #>";
+
+<#+
+    }
+
+    string CleanName(string name) {
+        System.Text.RegularExpressions.Regex regex = new System.Text.RegularExpressions.Regex(@"[^\p{Ll}\p{Lu}\p{Lt}\p{Lo}\p{Nd}\p{Nl}\p{Mn}\p{Mc}\p{Cf}\p{Pc}\p{Lm}]");
+        string cleanName = regex.Replace(name, "_");
+//The identifier must start with a character or a "_"
+        if (!char.IsLetter(cleanName, 0) || !Microsoft.CSharp.CSharpCodeProvider.CreateProvider("C#").IsValidIdentifier(cleanName)) {
+            cleanName = string.Concat("_", cleanName);
+        }
+        return cleanName;
+    }
+#>
+
