@@ -1,3 +1,3 @@
 HeapOfThoughts
 ==============
-Solution with some usefull & useless code snippets/T4 templates etc.
+Solution with some useful & useless code snippets/T4 templates etc.
